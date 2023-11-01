@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
-const jtw = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 
 
 const app = express();
@@ -17,6 +17,18 @@ const User = require('./models/User')
 app.get('/', (req, res) => {
     res.status(200).json({ msg: 'Bem vindo a API!' });
 });
+
+// Private Route
+app.get('/user/:id', async (req, res) => {
+    const id = req.params.id;
+
+    //check if user exist
+    const user = await User.findById(id, '-password')
+
+    if (!user) {
+        return res.status(404).json({ msg: 'usuario nao encontrado' })
+    }
+})
 
 //Register user
 app.post('/auth/register', async (req, res) => {
@@ -107,7 +119,7 @@ app.post("/auth/login", async (req, res) => {
 
         res.status(200).json({ msg: "Autenticação realizada com sucesso!", token });
     } catch (error) {
-        res.status(500).json({ msg: error });
+        res.status(500).json({ msg: "Autenticação sem sucesso!", token });
     }
 });
 
