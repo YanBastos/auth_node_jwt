@@ -4,7 +4,6 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-
 const app = express();
 
 //config JSON response
@@ -19,16 +18,35 @@ app.get('/', (req, res) => {
 });
 
 // Private Route
-app.get('/user/:id', async (req, res) => {
+app.get("/user/:id", checkToken, async (req, res) => {
     const id = req.params.id;
 
-    //check if user exist
-    const user = await User.findById(id, '-password')
+    // check if user exists
+    const user = await User.findById(id, "-password");
 
     if (!user) {
-        return res.status(404).json({ msg: 'usuario nao encontrado' })
+        return res.status(404).json({ msg: "Usuário não encontrado!" });
     }
-})
+
+    res.status(200).json({ user });
+});
+
+function checkToken(req, res, next) {
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
+
+    if (!token) return res.status(401).json({ msg: "Acesso negado!" });
+
+    try {
+        const secret = process.env.SECRET;
+
+        jwt.verify(token, secret);
+
+        next();
+    } catch (err) {
+        res.status(400).json({ msg: "O Token é inválido!" });
+    }
+}
 
 //Register user
 app.post('/auth/register', async (req, res) => {
@@ -50,7 +68,6 @@ app.post('/auth/register', async (req, res) => {
 
     // check if user exist
     const userExist = await User.findOne({ email: email }) // find email
-
 
     if (userExist) {
         return res.status(422).json({ msg: 'Utilize outro email' });
@@ -123,8 +140,6 @@ app.post("/auth/login", async (req, res) => {
     }
 });
 
-
-
 // Credencials
 const dbUser = process.env.DB_USER
 const dbPass = process.env.DB_PASS
@@ -133,6 +148,6 @@ mongoose
     .connect(`mongodb+srv://${dbUser}:${dbPass}@cluster0.iorpwks.mongodb.net/?retryWrites=true&w=majority`,)
     .then(() => {
         app.listen(3000);
-        console.log('Conectou ao banco!');
+        console.log('Conectou ao banco de dados!');
     })
     .catch((err) => console.log(err));
